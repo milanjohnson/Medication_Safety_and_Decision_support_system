@@ -1,0 +1,10 @@
+﻿papers/
+data/
+*.zip
+*.tar.gz
+*.pt
+*.bin
+*.faiss
+.venv/
+__pycache__/
+aakaash/artifacts/
