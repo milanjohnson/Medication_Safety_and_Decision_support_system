@@ -8,3 +8,4 @@ data/
 .venv/
 __pycache__/
 aakaash/artifacts/
+aakaash/.install_log.txt
