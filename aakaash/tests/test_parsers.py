@@ -64,7 +64,7 @@ class DDI(unittest.TestCase):
                 (Path(d) / sub / "a.xml").write_text(FIXTURE_DDI, encoding="utf-8")
             c = ddi2013.classify_files(Path(d))
         self.assertEqual({k: len(v) for k, v in c.items()},
-                         {"train": 1, "test": 1, "unclassified": 1})
+                         {"train": 1, "test": 1, "excluded_ner": 0, "unclassified": 1})
 
 
 class TAC(unittest.TestCase):

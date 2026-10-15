@@ -86,8 +86,10 @@ def parse_ddi_file(path: Path, stats: Counter, markers=DEFAULT_MARKERS):
             elif ddi == "true":
                 label = (pair.get("type") or "").lower()
                 if label not in POSITIVE_CLASSES:
-                    stats["skipped_true_without_valid_type"] += 1
-                    continue
+                    # real corpus has one ddi="true" pair with no type (d236.s29.p0): count it
+                    # in the skip counter and treat it as false (user decision)
+                    stats["true_without_valid_type_treated_false"] += 1
+                    label = NEGATIVE
             else:
                 stats["skipped_bad_ddi_attr"] += 1
                 continue
@@ -110,9 +112,12 @@ def parse_ddi_file(path: Path, stats: Counter, markers=DEFAULT_MARKERS):
 def classify_files(root: Path) -> dict[str, list[Path]]:
     """Assign each XML under root to 'train' or 'test' by folder names. Never guesses:
     files matching neither (or both) go to 'unclassified' and are reported."""
-    out = {"train": [], "test": [], "unclassified": []}
+    out = {"train": [], "test": [], "excluded_ner": [], "unclassified": []}
     for path in sorted(root.rglob("*.xml")):
         parts = [p.lower() for p in path.relative_to(root).parts[:-1]]
+        if any("drugner" in p for p in parts):  # DrugNER task test: all pairs false, not used
+            out["excluded_ner"].append(path)
+            continue
         is_train = any("train" in p for p in parts)
         is_test = any("test" in p for p in parts)
         if is_train and not is_test:
