@@ -16,12 +16,12 @@ from medsafe.chunking import chunk_label, chunk_text  # noqa: E402
 FIXTURE_DDI = """<document id="DDI-DrugBank.dFIX">
 <sentence id="DDI-DrugBank.dFIX.s0" text="Aspirin increases the effect of warfarin.">
 <entity id="e0" charOffset="0-6" type="drug" text="Aspirin"/>
-<entity id="e1" charOffset="33-40" type="drug" text="warfarin"/>
+<entity id="e1" charOffset="32-39" type="drug" text="warfarin"/>
 <pair id="p0" e1="e0" e2="e1" ddi="true" type="effect"/>
 </sentence>
 <sentence id="DDI-DrugBank.dFIX.s1" text="Do not mix aspirin and ibuprofen.">
 <entity id="e0" charOffset="11-17" type="drug" text="aspirin"/>
-<entity id="e1" charOffset="23-31" type="drug" text="ibuprofen"/>
+<entity id="e1" charOffset="22-30" type="drug" text="ibuprofen"/>
 <pair id="p0" e1="e0" e2="e1" ddi="false"/>
 </sentence></document>"""
 
