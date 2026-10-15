@@ -21,7 +21,7 @@ FIXTURE_DDI = """<document id="DDI-DrugBank.dFIX">
 </sentence>
 <sentence id="DDI-DrugBank.dFIX.s1" text="Do not mix aspirin and ibuprofen.">
 <entity id="e0" charOffset="11-17" type="drug" text="aspirin"/>
-<entity id="e1" charOffset="22-30" type="drug" text="ibuprofen"/>
+<entity id="e1" charOffset="23-31" type="drug" text="ibuprofen"/>
 <pair id="p0" e1="e0" e2="e1" ddi="false"/>
 </sentence></document>"""
 
