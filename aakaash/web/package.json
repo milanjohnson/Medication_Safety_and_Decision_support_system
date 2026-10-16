@@ -1,0 +1,28 @@
+{
+  "name": "medsafe-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Research prototype UI for subareas A and B. Decision support only. Not medical advice.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview",
+    "gen:types": "node scripts/gen-types.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6",
+    "recharts": "^2.15.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21"
+  }
+}

@@ -5,18 +5,24 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 DDILabel = Literal["effect", "mechanism", "advise", "int", "false"]
 
 
-class Readiness(BaseModel):
+class ApiModel(BaseModel):
+    # Fields with defaults are always present in a response, so the generated TypeScript types
+    # must not mark them optional.
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
+
+class Readiness(ApiModel):
     status: Literal["ready", "not_ready"]
     reason: str | None = None
     fix: str | None = None
 
 
-class Health(BaseModel):
+class Health(ApiModel):
     status: Literal["ok"] = "ok"
 
 
@@ -27,7 +33,7 @@ class ComponentStatus(Readiness):
     detail: dict[str, str | int | float] = Field(default_factory=dict)
 
 
-class ModuleStatus(BaseModel):
+class ModuleStatus(ApiModel):
     id: str
     label: str
     status: Literal["coming_soon"] = "coming_soon"
@@ -36,16 +42,23 @@ class ModuleStatus(BaseModel):
     owner: str = "to be confirmed"
 
 
-class StatusResponse(BaseModel):
+class StageInfo(ApiModel):
+    number: int
+    name: str
+    in_scope: bool  # covered by this app (stages 2, 4, 5, 6 per the project brief)
+
+
+class StatusResponse(ApiModel):
     components: list[ComponentStatus]
     modules: list[ModuleStatus]
+    stages: list[StageInfo]
     active_encoder: str
     active_classifier: str
     data_dir: str
 
 
 # ---- DDI 2013 -----------------------------------------------------------------------------
-class DDISplitStats(BaseModel):
+class DDISplitStats(ApiModel):
     split: Literal["train", "dev", "test"]
     instances: int
     class_counts: dict[str, int]
@@ -53,7 +66,7 @@ class DDISplitStats(BaseModel):
     by_source: dict[str, int]
 
 
-class DDIParserStats(BaseModel):
+class DDIParserStats(ApiModel):
     """Counts straight from the parser, before the dev split is carved out of train."""
     split: Literal["train_all", "test"]
     counts: dict[str, int]
@@ -68,7 +81,7 @@ class DDIStatsResponse(Readiness):
     seed: int | None = None
 
 
-class DDIExample(BaseModel):
+class DDIExample(ApiModel):
     split: Literal["train", "dev", "test"]
     label: DDILabel
     source: str
@@ -87,7 +100,7 @@ class DDIExamplesResponse(Readiness):
 
 
 # ---- DailyMed / TAC ----------------------------------------------------------------------
-class ZipFileInfo(BaseModel):
+class ZipFileInfo(ApiModel):
     name: str
     size_bytes: int
 
@@ -135,7 +148,7 @@ TraceCategory = Literal["from_papers", "from_baseline_review", "not_in_papers", 
 TraceStatusKind = Literal["untested", "ran", "verified", "unknown"]
 
 
-class TraceRow(BaseModel):
+class TraceRow(ApiModel):
     component: str
     file: str
     source: str

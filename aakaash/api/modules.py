@@ -15,6 +15,8 @@ STAGE_NAMES = {
     5: "Recommendation Engine",
     6: "Explanation Generator",
 }
+# Stages this web app covers (from the project brief: "restricted to my stages"). Not the whole design.
+IN_SCOPE_STAGES = (2, 4, 5, 6)
 
 
 @dataclass(frozen=True)

@@ -9,3 +9,8 @@ data/
 __pycache__/
 aakaash/artifacts/
 aakaash/.install_log.txt
+
+aakaash/web/node_modules/
+aakaash/web/dist/
+aakaash/web/openapi.json
+aakaash/web/screenshots/

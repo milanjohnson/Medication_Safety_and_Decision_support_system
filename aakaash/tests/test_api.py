@@ -110,6 +110,13 @@ def test_status_coming_soon_modules(client):
                                                             "Recommendation Engine"]
 
 
+def test_status_stages(client):
+    stages = client.get("/api/status").json()["stages"]
+    assert [s["number"] for s in stages] == [1, 2, 3, 4, 5, 6]
+    assert [s["number"] for s in stages if s["in_scope"]] == [2, 4, 5, 6]
+    assert stages[0]["name"] == "Input Understanding"
+
+
 def test_status_ddi_ready_when_files_exist(client, dirs):
     write_ddi(dirs[0])
     c = {c["id"]: c for c in client.get("/api/status").json()["components"]}["ddi_data"]

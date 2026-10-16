@@ -9,8 +9,8 @@ from pathlib import Path
 from medsafe import ddi2013
 
 from ..config import Settings
-from ..modules import COMING_SOON, STAGE_NAMES
-from ..schemas import ComponentStatus, ModuleStatus, StatusResponse
+from ..modules import COMING_SOON, IN_SCOPE_STAGES, STAGE_NAMES
+from ..schemas import ComponentStatus, ModuleStatus, StageInfo, StatusResponse
 from . import datasets
 
 INDEX_MANIFEST = "index/manifest.json"            # written by the Phase 3 index build
@@ -101,5 +101,7 @@ def get_status(s: Settings) -> StatusResponse:
         modules=[ModuleStatus(id=m.id, label=m.label, stages=list(m.stages),
                               stage_names=[STAGE_NAMES[x] for x in m.stages])
                  for m in COMING_SOON],
+        stages=[StageInfo(number=n, name=name, in_scope=n in IN_SCOPE_STAGES)
+                for n, name in sorted(STAGE_NAMES.items())],
         active_encoder=s.encoder_name, active_classifier=s.classifier_name,
         data_dir=str(s.data_dir))
