@@ -43,6 +43,10 @@ def chunk_label(rec: dict, size: int = DEFAULT_SIZE, overlap: int = DEFAULT_OVER
                     "chunk_id": f"{rec['set_id']}:{sec_name}:{idx}",
                     "set_id": rec["set_id"], "section": sec_name,
                     "ingredients": rec["ingredients"], "title": rec["title"],
+                    "active_moieties": rec.get("active_moieties", []),
+                    "product_names": rec.get("product_names", []),
+                    "generic_names": rec.get("generic_names", []),
+                    "manufacturer": rec.get("manufacturer"),
                     "text": ch,
                 }
                 idx += 1

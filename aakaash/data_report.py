@@ -69,7 +69,7 @@ def report_dailymed(folder: Path, size, overlap, max_labels):
               f"- Distinct set ids: {len(set_ids)}",
               f"- Distinct active ingredients (normalised strings): {len(ingredient_set)}",
               f"- Labels with no ingredient found: {no_ing}",
-              f"- Labels with none of the 7 sections found: {no_sections}",
+              f"- Labels with none of the {len(CANONICAL_SECTIONS)} sections found: {no_sections}",
               f"- Ingredient source counts: {dict(ing_src)}",
               f"- Section detection method counts: {dict(methods)}",
               f"- Chunking: size={size}, overlap={overlap}, unit=whitespace words", ""]
