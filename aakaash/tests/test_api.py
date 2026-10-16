@@ -102,9 +102,12 @@ def test_status_coming_soon_modules(client):
     assert len(mods) == 7
     assert all(m["status"] == "coming_soon" and m["owner"] == "to be confirmed"
                for m in mods.values())
-    assert mods["allergy_check"]["stage"] is None  # not confirmed, so not guessed
-    assert mods["deep_learning_encoder"]["stage"] == 2
-    assert mods["focal_loss_model"]["stage"] == 4
+    assert {k: m["stages"] for k, m in mods.items()} == {
+        "allergy_check": [4], "contraindication_check": [4], "duplicate_therapy_check": [3],
+        "disease_precautions": [4], "full_patient_profile": [3],
+        "deep_learning_encoder": [2, 5], "focal_loss_model": [4]}
+    assert mods["deep_learning_encoder"]["stage_names"] == ["Information Extraction",
+                                                            "Recommendation Engine"]
 
 
 def test_status_ddi_ready_when_files_exist(client, dirs):
@@ -189,10 +192,14 @@ def test_dailymed_ready_from_summary_file(client, dirs):
     with zipfile.ZipFile(folder / "fixture_part.zip", "w") as zf:
         zf.writestr("a.txt", "fixture")
     (dirs[1] / "dailymed_stats.json").write_text(json.dumps({
+        "is_sample": True, "sample_limit_per_part": 7,
+        "scope": "SAMPLE: the first 7 labels of each loaded part, not the full set",
         "parts_loaded": ["fixture_part.zip"], "labels_parsed": 7, "parse_failures": 0,
-        "labels_per_section": {"indications": 7}, "chunks": 9, "distinct_ingredients": 3}))
+        "labels_per_section": {"indications": 7}, "chunks": 9, "distinct_ingredients": 3,
+        "distinct_active_moieties": 2}))
     r = client.get("/api/datasets/dailymed/stats").json()
     assert r["status"] == "ready" and r["labels_parsed"] == 7 and r["chunks"] == 9
+    assert r["is_sample"] is True and r["scope"].startswith("SAMPLE")
 
 
 def test_dailymed_bad_summary_file_is_not_ready(client, dirs):

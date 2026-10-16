@@ -31,8 +31,8 @@ class ModuleStatus(BaseModel):
     id: str
     label: str
     status: Literal["coming_soon"] = "coming_soon"
-    stage: int | None = None
-    stage_name: str | None = None
+    stages: list[int]
+    stage_names: list[str]
     owner: str = "to be confirmed"
 
 
@@ -95,11 +95,23 @@ class ZipFileInfo(BaseModel):
 class DailyMedStatsResponse(Readiness):
     zip_files: list[ZipFileInfo] = Field(default_factory=list)
     parts_loaded: list[str] = Field(default_factory=list)
+    # is_sample/scope come from the stats file itself: a capped run must never read as a full count
+    is_sample: bool | None = None
+    scope: str | None = None
+    sample_limit_per_part: int | None = None
+    zip_entries: dict[str, int] = Field(default_factory=dict)
     labels_parsed: int | None = None
     parse_failures: int | None = None
     labels_per_section: dict[str, int] = Field(default_factory=dict)
     chunks: int | None = None
+    chunks_per_section: dict[str, int] = Field(default_factory=dict)
+    chunk_size: int | None = None
+    chunk_overlap: int | None = None
     distinct_ingredients: int | None = None
+    distinct_active_moieties: int | None = None
+    parse_stats: dict[str, int] = Field(default_factory=dict)
+    elapsed_seconds: float | None = None
+    generated_at: str | None = None
 
 
 class TacStatsResponse(Readiness):

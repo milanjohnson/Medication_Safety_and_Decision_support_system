@@ -20,7 +20,7 @@ from ..schemas import (DDIExample, DDIExamplesResponse, DDIParserStats, DDISplit
 DDI_DIRNAME = "ddi2013"
 TAC_DIRNAME = "tac2017"
 DAILYMED_DIRNAME = "dailymed_rx"
-DAILYMED_STATS_FILE = "dailymed_stats.json"  # written by a stats script (not built yet)
+DAILYMED_STATS_FILE = "dailymed_stats.json"  # written by scripts/dailymed_stats.py
 SPLITS = ("train", "dev", "test")
 
 _cache: dict[str, "DDIData"] = {}
@@ -135,8 +135,8 @@ def dailymed_stats(settings: Settings) -> DailyMedStatsResponse:
             status="not_ready", zip_files=infos,
             reason=f"{len(zips)} zip file(s) are present, but no label statistics have been "
                    f"computed yet ({summary} is missing).",
-            fix="Label statistics need a stats script that is not built yet; it comes after the "
-                "SPL parser has been reviewed.")
+            fix="From the aakaash folder run: .venv\Scripts\python.exe scripts\dailymed_stats.py "
+                "--max-labels-per-part 200 (sample) or without the cap (full).")
     try:
         raw = json.loads(summary.read_text(encoding="utf-8"))
         return DailyMedStatsResponse(status="ready", zip_files=infos, **raw)

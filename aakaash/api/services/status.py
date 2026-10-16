@@ -98,8 +98,8 @@ def get_status(s: Settings) -> StatusResponse:
     return StatusResponse(
         components=[_ddi_data(s), _tac_data(s), _dailymed_data(s), _encoder(s), _index(s),
                     _ddi_model(s)],
-        modules=[ModuleStatus(id=m.id, label=m.label, stage=m.stage,
-                              stage_name=STAGE_NAMES.get(m.stage) if m.stage else None)
+        modules=[ModuleStatus(id=m.id, label=m.label, stages=list(m.stages),
+                              stage_names=[STAGE_NAMES[x] for x in m.stages])
                  for m in COMING_SOON],
         active_encoder=s.encoder_name, active_classifier=s.classifier_name,
         data_dir=str(s.data_dir))
