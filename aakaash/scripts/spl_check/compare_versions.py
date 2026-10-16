@@ -137,6 +137,13 @@ def shared(key):
 a, b = shared("ingredients"), shared("active_moieties")
 print(f"labels that share their full ingredient set with at least one other label (within these {len(new_recs)}): "
       f"by ingredient string {a[0]} (in {a[1]} groups) -> by active moiety {b[0]} (in {b[1]} groups)")
+changed = [(o, nw) for o, nw in zip(old_recs, new_recs) if o["ingredients"] != nw["ingredients"]]
+print(f"\nlabels whose ingredient set changed between the two versions: {len(changed)} of {len(new_recs)}")
+for o, nw in changed:
+    print(f"   {nw['set_id']} | {(nw['product_names'] or ['?'])[0]} | {o['title'][:45]!r}")
+    print(f"        old set ({o['ingredient_source']}): {o['ingredients']}")
+    print(f"        new set ({nw['ingredient_source']}): {nw['ingredients']}")
+print("old ingredient_source:", dict(Counter(r["ingredient_source"] for r in old_recs)))
 print("ingredient_source:", dict(Counter(r["ingredient_source"] for r in new_recs)))
 if len(new_recs) > 76:
     r = new_recs[76]

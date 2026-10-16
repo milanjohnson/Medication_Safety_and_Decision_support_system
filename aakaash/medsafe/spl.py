@@ -1,7 +1,7 @@
-# SOURCE: Checked on real files: the first 200 labels of dm_spl_release_human_rx_part6.zip (see
-# aakaash/scripts/spl_check). Confirmed there: HL7 v3 namespace, the LOINC section codes below, the
-# ACTIB/ACTIM ingredient classes, and the XML paths used for active moiety, generic name and
-# manufacturer. Everything else is UNVERIFIED beyond those 200 labels.
+# SOURCE: Checked on real files: dm_spl_release_human_rx_part6.zip (see aakaash/scripts/spl_check).
+# Confirmed there: HL7 v3 namespace, the LOINC section codes below, the ingredient classes
+# (ACTIB, ACTIM and ACTIR carry active ingredients; IACT, CNTM and INGR do not) and the XML paths
+# used for active moiety, generic name and manufacturer. Anything else is UNVERIFIED.
 # FROM PAPERS: P1 uses DailyMed SPL XML and the sections Adverse Reactions, Warnings and
 # Precautions, Boxed Warnings, Drug Interactions. Indications, Contraindications, Precautions
 # and Use in Specific Populations come from the task spec / the user (NOT IN PAPERS).
@@ -55,6 +55,10 @@ CANONICAL_SECTIONS = ("indications", "contraindications", "warnings_precautions"
 DESCEND_INTO = frozenset({"precautions"})
 _NEWLINE_AFTER = {"paragraph", "item", "tr", "br", "list", "caption", "title"}
 MAX_ZIP_DEPTH = 3
+# ingredient/@classCode values that are active ingredients. On part6 the other classes are
+# IACT (inactive), CNTM (excipients/packaging such as sodium hydroxide, latex) and INGR (kit parts:
+# water, glycerin, parabens); those are not taken.
+ACTIVE_CLASSES = ("ACTIB", "ACTIM", "ACTIR")
 
 
 def _ln(el) -> str:
@@ -170,29 +174,27 @@ def parse_label(data: bytes, source: str = "", member: str = "") -> dict:
     title_el = _first_child(root, "title")
     ver_el = _first_child(root, "versionNumber")
     eff_el = _first_child(root, "effectiveTime")
-    actib, actim, moieties, names, generics = [], [], [], [], []
-    actib_m, actim_m = [], []
-    actib_missing = actim_missing = 0
+    moieties, names, generics = [], [], []
+    active = []  # (classCode, name, moiety or None), one per distinct substance
+    seen_substances = set()
     for el in root.iter():
         n = _ln(el)
         if n == "ingredient":
             cls = el.get("classCode", "")
-            if cls not in ("ACTIB", "ACTIM"):
+            if cls not in ACTIVE_CLASSES:
                 continue
             sub = _first_child(el, "ingredientSubstance")
             name = _clean_text(_first_child(sub, "name"))
             if name is None:
                 continue
+            code_el = _first_child(sub, "code")  # UNII; every active ingredient on part6 has one
+            key = code_el.get("code") if code_el is not None and code_el.get("code")                 else normalize_ingredient(name)
+            if key in seen_substances:  # same substance in several products/parts of one label
+                continue
+            seen_substances.add(key)
             # real path: ingredient/ingredientSubstance/activeMoiety/activeMoiety/name
             moiety = _clean_text(_descend(sub, "activeMoiety", "activeMoiety", "name"))
-            if cls == "ACTIB":
-                actib.append(name)
-                actib_m.extend([moiety] if moiety else [])
-                actib_missing += moiety is None
-            else:
-                actim.append(name)
-                actim_m.extend([moiety] if moiety else [])
-                actim_missing += moiety is None
+            active.append((cls, name, moiety))
         elif n == "activeMoiety":
             nm = _first_child(el, "name")
             if nm is not None and nm.text:
@@ -205,12 +207,12 @@ def parse_label(data: bytes, source: str = "", member: str = "") -> dict:
             g = _clean_text(_first_child(el, "name"))
             if g:
                 generics.append(g)
-    # which ingredient list is used is unchanged: ACTIB, else ACTIM, else any activeMoiety name
-    if actib:
-        ingredients, moiety_raw, missing, source_name = actib, actib_m, actib_missing, "ACTIB"
-    elif actim:
-        ingredients, moiety_raw, missing, source_name = actim, actim_m, actim_missing, "ACTIM"
-    else:
+    if active:
+        ingredients = [a[1] for a in active]
+        moiety_raw = [a[2] for a in active if a[2]]
+        missing = sum(1 for a in active if a[2] is None)
+        source_name = "+".join(c for c in ACTIVE_CLASSES if any(a[0] == c for a in active))
+    else:  # no ACTIB/ACTIM/ACTIR with a name: fall back to any activeMoiety name
         ingredients, moiety_raw, missing = moieties, moieties, 0
         source_name = "activeMoiety" if moieties else "none"
     # real path: document/author/assignedEntity/representedOrganization/name (direct child only)

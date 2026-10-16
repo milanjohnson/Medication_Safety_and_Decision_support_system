@@ -91,5 +91,42 @@ class SPLFixes(unittest.TestCase):
         self.assertEqual(ch["product_names"], ["FixBrand"])
 
 
+def ing(cls, unii, name, moiety=None):
+    m = (f"<activeMoiety><activeMoiety><name>{moiety}</name></activeMoiety></activeMoiety>"
+         if moiety else "")
+    return (f'<ingredient classCode="{cls}"><ingredientSubstance><code code="{unii}"/>'
+            f"<name>{name}</name>{m}</ingredientSubstance></ingredient>")
+
+
+class ActiveIngredientClasses(unittest.TestCase):
+    def parse(self, *ingredients):
+        xml = (f'<document {NS}><setId root="S"/><subject><manufacturedProduct><manufacturedProduct>'
+               f'<name>P</name>{"".join(ingredients)}</manufacturedProduct></manufacturedProduct>'
+               f'</subject></document>').encode()
+        return spl.parse_label(xml)
+
+    def test_actib_actim_actir_together_and_inactive_classes_excluded(self):
+        r = self.parse(
+            ing("ACTIB", "U1", "SELENIOUS ACID", "SELENIOUS ACID"),
+            ing("ACTIM", "U2", "ZINC SULFATE", "ZINC CATION"),
+            ing("ACTIR", "U3", "LIDOCAINE HYDROCHLORIDE", "LIDOCAINE"),
+            ing("IACT", "U4", "STARCH"), ing("CNTM", "U5", "SODIUM HYDROXIDE"),
+            ing("INGR", "U6", "WATER"))
+        self.assertEqual(r["ingredients"], ["lidocaine hydrochloride", "selenious acid", "zinc sulfate"])
+        self.assertEqual(r["active_moieties"], ["lidocaine", "selenious acid", "zinc cation"])
+        self.assertEqual(r["ingredient_source"], "ACTIB+ACTIM+ACTIR")
+
+    def test_deduplicated_by_substance_code_not_by_spelling(self):
+        r = self.parse(ing("ACTIB", "U1", "PAROXETINE HYDROCHLORIDE", "PAROXETINE"),
+                       ing("ACTIB", "U1", "PAROXETINE HYDROCHLORIDE HEMIHYDRATE", "PAROXETINE"),
+                       ing("ACTIB", "U1", "PAROXETINE HYDROCHLORIDE", "PAROXETINE"))
+        self.assertEqual(r["ingredients"], ["paroxetine hydrochloride"])
+        self.assertEqual(r["active_moieties"], ["paroxetine"])
+
+    def test_actir_only_label_uses_actir(self):
+        r = self.parse(ing("ACTIR", "U3", "IPRATROPIUM BROMIDE", "IPRATROPIUM"))
+        self.assertEqual((r["ingredients"], r["ingredient_source"]), (["ipratropium bromide"], "ACTIR"))
+
+
 if __name__ == "__main__":
     unittest.main()

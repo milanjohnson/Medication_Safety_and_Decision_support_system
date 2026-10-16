@@ -27,6 +27,30 @@ from medsafe.chunking import DEFAULT_OVERLAP, DEFAULT_SIZE, chunk_label  # noqa:
 from medsafe.spl import CANONICAL_SECTIONS, iter_parts  # noqa: E402
 
 
+def peak_working_set_mb() -> float | None:
+    """Peak RAM of this process in MB (Windows only; None elsewhere)."""
+    if sys.platform != "win32":
+        return None
+    import ctypes
+    import ctypes.wintypes as wt
+
+    class PMC(ctypes.Structure):
+        _fields_ = [("cb", wt.DWORD), ("PageFaultCount", wt.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaNonPagedPoolUsage", ctypes.c_size_t), ("PagefileUsage", ctypes.c_size_t),
+                    ("PeakPagefileUsage", ctypes.c_size_t)]
+
+    c = PMC()
+    c.cb = ctypes.sizeof(PMC)
+    k32, ps = ctypes.WinDLL("kernel32"), ctypes.WinDLL("psapi")
+    k32.GetCurrentProcess.restype = wt.HANDLE
+    ps.GetProcessMemoryInfo.argtypes = [wt.HANDLE, ctypes.POINTER(PMC), wt.DWORD]
+    ps.GetProcessMemoryInfo(k32.GetCurrentProcess(), ctypes.byref(c), c.cb)
+    return round(c.PeakWorkingSetSize / 1e6, 1)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("--data-dir", type=Path, default=AAKAASH.parent / "data" / "dailymed_rx")
@@ -48,10 +72,15 @@ def main() -> None:
     t0 = time.perf_counter()
     by_part: dict[str, Counter] = {}
     sec_labels, sec_chunks = Counter(), Counter()
-    ingredients, moieties = set(), set()
-    labels = 0
+    ingredients, moieties, manufacturers = set(), set(), set()
+    ingredient_source: Counter = Counter()
+    labels = no_sections = 0
     for rec in iter_parts(a.data_dir, by_part, a.max_labels_per_part):
         labels += 1
+        no_sections += not rec["sections"]
+        ingredient_source[rec["ingredient_source"]] += 1
+        if rec["manufacturer"]:
+            manufacturers.add(rec["manufacturer"])
         ingredients.update(rec["ingredients"])
         moieties.update(rec["active_moieties"])
         for sec in rec["sections"]:
@@ -68,7 +97,8 @@ def main() -> None:
         "is_sample": sample,
         "sample_limit_per_part": a.max_labels_per_part,
         "scope": (f"SAMPLE: the first {a.max_labels_per_part} labels of each loaded part, not the full set"
-                  if sample else "All labels in the loaded parts"),
+                  if sample else
+                  f"FULL RUN: no cap, every entry of the loaded zip(s) ({sum(zip_entries.values())} entries)"),
         "parts_loaded": list(by_part),
         "zip_entries": zip_entries,
         "labels_parsed": parse_stats["labels_parsed"],
@@ -78,9 +108,13 @@ def main() -> None:
         "chunks_per_section": {s: sec_chunks[s] for s in CANONICAL_SECTIONS},
         "distinct_ingredients": len(ingredients),
         "distinct_active_moieties": len(moieties),
+        "distinct_manufacturers": len(manufacturers),
+        "labels_without_any_section": no_sections,
+        "ingredient_source": dict(ingredient_source),
         "parse_stats": dict(parse_stats),
         "chunk_size": a.size, "chunk_overlap": a.overlap,
         "elapsed_seconds": round(elapsed, 2),
+        "peak_working_set_mb": peak_working_set_mb(),
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     assert out["labels_parsed"] == labels

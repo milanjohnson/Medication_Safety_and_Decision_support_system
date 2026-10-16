@@ -109,6 +109,10 @@ class DailyMedStatsResponse(Readiness):
     chunk_overlap: int | None = None
     distinct_ingredients: int | None = None
     distinct_active_moieties: int | None = None
+    distinct_manufacturers: int | None = None
+    labels_without_any_section: int | None = None
+    ingredient_source: dict[str, int] = Field(default_factory=dict)
+    peak_working_set_mb: float | None = None
     parse_stats: dict[str, int] = Field(default_factory=dict)
     elapsed_seconds: float | None = None
     generated_at: str | None = None
